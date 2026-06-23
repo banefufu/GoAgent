@@ -1,0 +1,16 @@
+database:
+  path: data/goagentx.db
+
+reports:
+  directory: reports
+
+evolution:
+  degradation_window: 50
+  baseline_window: 300
+  degradation_threshold: 0.15
+
+arena:
+  quick_reject_rounds: 5
+  full_eval_rounds: 50
+  min_win_rate: 0.55
+  p_value_threshold: 0.05

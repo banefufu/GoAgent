@@ -1,0 +1,7 @@
+min_win_rate: 0.55
+max_p_value: 0.05
+min_score_delta: 0.0
+max_cost_delta: 0.20
+max_latency_delta: 0.20
+require_no_safety_violation: true
+require_no_critical_bucket_regression: true

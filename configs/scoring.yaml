@@ -1,0 +1,6 @@
+weights:
+  quality: 0.70
+  cost: 0.10
+  latency: 0.10
+  safety: 0.10
+safety_penalty: 1.0
