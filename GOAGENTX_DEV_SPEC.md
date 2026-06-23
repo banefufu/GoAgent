@@ -309,6 +309,7 @@ CREATE TABLE strategies (
   id TEXT PRIMARY KEY,
   version INTEGER NOT NULL,
   name TEXT NOT NULL,
+  task_type TEXT,
   status TEXT NOT NULL,
   genome_json TEXT NOT NULL,
   parent_ids_json TEXT NOT NULL,
@@ -625,7 +626,7 @@ class StrategyRegistry:
 | 阶段 | 状态 | 备注 |
 |---|---|---|
 | A | 已完成 | A1-A3 已完成，本地工程可安装、可运行、可测试 |
-| B | 进行中 | B1 已完成，继续推进 Strategy Registry 持久化 |
+| B | 进行中 | B1-B2 已完成，继续推进策略 YAML 导入导出 |
 | C | 待开始 | 评分可信度决定进化质量 |
 | D | 待开始 | Arena 是安全网，优先级最高 |
 | E | 待开始 | DreamCycle 不直接上线 |
@@ -718,7 +719,7 @@ class StrategyRegistry:
 - 测试方法：
   - `pytest -q tests/unit/test_strategy_model.py`
 
-### B2：实现 StrategyRegistry
+### B2：实现 StrategyRegistry（已完成）
 
 - 目标：支持策略增删查改和状态流转。
 - 前置依赖：A3、B1

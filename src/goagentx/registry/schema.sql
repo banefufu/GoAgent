@@ -2,6 +2,7 @@ CREATE TABLE IF NOT EXISTS strategies (
   id TEXT PRIMARY KEY,
   version INTEGER NOT NULL,
   name TEXT NOT NULL,
+  task_type TEXT,
   status TEXT NOT NULL,
   genome_json TEXT NOT NULL,
   parent_ids_json TEXT NOT NULL,

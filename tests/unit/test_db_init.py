@@ -36,6 +36,31 @@ def test_initialize_database_is_idempotent(tmp_path: Path) -> None:
     assert _table_names(database_path) >= EXPECTED_TABLES
 
 
+def test_initialize_database_migrates_strategy_task_type_column(tmp_path: Path) -> None:
+    database_path = tmp_path / "data" / "goagentx.db"
+    database_path.parent.mkdir()
+    with sqlite3.connect(database_path) as connection:
+        connection.execute(
+            """
+            CREATE TABLE strategies (
+              id TEXT PRIMARY KEY,
+              version INTEGER NOT NULL,
+              name TEXT NOT NULL,
+              status TEXT NOT NULL,
+              genome_json TEXT NOT NULL,
+              parent_ids_json TEXT NOT NULL,
+              created_at TEXT NOT NULL,
+              updated_at TEXT NOT NULL,
+              notes TEXT
+            )
+            """
+        )
+
+    initialize_database(database_path)
+
+    assert "task_type" in _column_names(database_path, "strategies")
+
+
 def test_init_command_uses_configured_database_path(tmp_path: Path) -> None:
     config_dir = _write_config_set(tmp_path)
     database_path = tmp_path / "custom" / "goagentx.db"
@@ -64,6 +89,12 @@ def _table_names(database_path: Path) -> set[str]:
             "SELECT name FROM sqlite_master WHERE type = 'table'"
         ).fetchall()
     return {row[0] for row in rows}
+
+
+def _column_names(database_path: Path, table_name: str) -> set[str]:
+    with sqlite3.connect(database_path) as connection:
+        rows = connection.execute(f"PRAGMA table_info({table_name})").fetchall()
+    return {row[1] for row in rows}
 
 
 def _write_config_set(tmp_path: Path) -> Path:

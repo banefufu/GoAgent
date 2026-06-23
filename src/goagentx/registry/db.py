@@ -32,6 +32,7 @@ def initialize_database(database_path: str | Path) -> Path:
     try:
         with sqlite3.connect(target_path) as connection:
             connection.executescript(schema_sql)
+            _ensure_strategy_schema(connection)
             connection.commit()
     except sqlite3.Error as exc:
         raise DatabaseInitializationError(
@@ -45,4 +46,27 @@ def load_schema_sql() -> str:
     """Load the packaged SQLite schema."""
     return resources.files("goagentx.registry").joinpath(SCHEMA_RESOURCE).read_text(
         encoding="utf-8"
+    )
+
+
+def _ensure_strategy_schema(connection: sqlite3.Connection) -> None:
+    """Apply small migrations and indexes for the strategies table."""
+    columns = {
+        row[1] for row in connection.execute("PRAGMA table_info(strategies)").fetchall()
+    }
+    if "task_type" not in columns:
+        connection.execute("ALTER TABLE strategies ADD COLUMN task_type TEXT")
+    connection.execute(
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_strategies_single_champion_task_type
+        ON strategies(task_type)
+        WHERE status = 'champion' AND task_type IS NOT NULL
+        """
+    )
+    connection.execute(
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_strategies_single_global_champion
+        ON strategies(status)
+        WHERE status = 'champion' AND task_type IS NULL
+        """
     )

@@ -105,6 +105,7 @@ class Strategy(StrictModel):
     id: NonEmptyString
     version: int = Field(..., gt=0)
     name: NonEmptyString
+    task_type: NonEmptyString | None = None
     status: StrategyStatus
     genome: Genome
     parent_ids: list[NonEmptyString] = Field(default_factory=list)
