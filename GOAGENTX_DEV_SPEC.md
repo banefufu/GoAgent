@@ -627,7 +627,7 @@ class StrategyRegistry:
 |---|---|---|
 | A | 已完成 | A1-A3 已完成，本地工程可安装、可运行、可测试 |
 | B | 已完成 | B1-B3 已完成，策略对象化和 YAML 文件流转可用 |
-| C | 待开始 | 评分可信度决定进化质量 |
+| C | 进行中 | C1 已完成，继续推进 TaskStore 持久化 |
 | D | 待开始 | Arena 是安全网，优先级最高 |
 | E | 待开始 | DreamCycle 不直接上线 |
 | F | 待开始 | GA 只产生候选，不绕过 Arena |
@@ -759,7 +759,7 @@ class StrategyRegistry:
 
 目标：让每次 Agent 运行都变成可计算、可回放的数据。
 
-### C1：定义 Task 和 TaskRun
+### C1：定义 Task 和 TaskRun（已完成）
 
 - 目标：实现任务、任务集、运行结果的数据结构。
 - 前置依赖：A2

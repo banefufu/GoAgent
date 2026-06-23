@@ -11,6 +11,7 @@ from goagentx.core.strategy import (
     ToolPolicy,
     ToolsGenome,
 )
+from goagentx.core.task import Task, TaskModelError, TaskRun, TaskSet, load_task_set
 
 __all__ = [
     "Genome",
@@ -20,6 +21,11 @@ __all__ = [
     "RetryPolicy",
     "Strategy",
     "StrategyStatus",
+    "Task",
+    "TaskModelError",
+    "TaskRun",
+    "TaskSet",
     "ToolPolicy",
     "ToolsGenome",
+    "load_task_set",
 ]

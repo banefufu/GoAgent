@@ -1,0 +1,32 @@
+{
+  "id": "sample-agent-tasks",
+  "description": "Small fixture used to validate TaskSet loading.",
+  "tasks": [
+    {
+      "id": "task-doc-001",
+      "task_type": "doc_qa",
+      "bucket": "baseline",
+      "input_json": {
+        "question": "What does GoAgentX evolve?",
+        "context": "GoAgentX evolves structured agent strategies."
+      },
+      "expected_json": {
+        "contains": ["structured agent strategies"]
+      },
+      "tags": ["docs", "qa"]
+    },
+    {
+      "id": "task-code-001",
+      "task_type": "code_review",
+      "bucket": "critical",
+      "input_json": {
+        "diff": "def add(a, b): return a - b",
+        "language": "python"
+      },
+      "expected_json": {
+        "finding": "subtraction used instead of addition"
+      },
+      "tags": ["code", "review"]
+    }
+  ]
+}
