@@ -624,7 +624,7 @@ class StrategyRegistry:
 
 | 阶段 | 状态 | 备注 |
 |---|---|---|
-| A | 进行中 | A1-A2 已完成，继续推进 SQLite 初始化 |
+| A | 已完成 | A1-A3 已完成，本地工程可安装、可运行、可测试 |
 | B | 待开始 | 策略对象化是后续全部能力前置 |
 | C | 待开始 | 评分可信度决定进化质量 |
 | D | 待开始 | Arena 是安全网，优先级最高 |
@@ -678,7 +678,7 @@ class StrategyRegistry:
 - 测试方法：
   - `pytest -q tests/unit/test_settings.py`
 
-### A3：SQLite 初始化
+### A3：SQLite 初始化（已完成）
 
 - 目标：建立本地数据库和 migration 初始化逻辑。
 - 前置依赖：A2
