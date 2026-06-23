@@ -625,7 +625,7 @@ class StrategyRegistry:
 | 阶段 | 状态 | 备注 |
 |---|---|---|
 | A | 已完成 | A1-A3 已完成，本地工程可安装、可运行、可测试 |
-| B | 待开始 | 策略对象化是后续全部能力前置 |
+| B | 进行中 | B1 已完成，继续推进 Strategy Registry 持久化 |
 | C | 待开始 | 评分可信度决定进化质量 |
 | D | 待开始 | Arena 是安全网，优先级最高 |
 | E | 待开始 | DreamCycle 不直接上线 |
@@ -701,7 +701,7 @@ class StrategyRegistry:
 
 目标：把策略配置变成可版本化、可继承、可查询的对象。
 
-### B1：定义 Strategy 数据结构
+### B1：定义 Strategy 数据结构（已完成）
 
 - 目标：实现 Strategy、Genome、PromptGenome、ToolPolicy 等类型。
 - 前置依赖：A2
