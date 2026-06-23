@@ -1,6 +1,13 @@
 """Persistence helpers for GoAgentX registries."""
 
 from goagentx.registry.db import initialize_database
+from goagentx.registry.strategy_io import (
+    StrategyIOError,
+    export_strategy_yaml,
+    import_strategy_yaml,
+    load_strategy_yaml,
+    strategy_to_yaml_data,
+)
 from goagentx.registry.strategy_registry import (
     StrategyAlreadyExistsError,
     StrategyNotFoundError,
@@ -10,8 +17,13 @@ from goagentx.registry.strategy_registry import (
 
 __all__ = [
     "StrategyAlreadyExistsError",
+    "StrategyIOError",
     "StrategyNotFoundError",
     "StrategyRegistry",
     "StrategyRegistryError",
+    "export_strategy_yaml",
+    "import_strategy_yaml",
     "initialize_database",
+    "load_strategy_yaml",
+    "strategy_to_yaml_data",
 ]

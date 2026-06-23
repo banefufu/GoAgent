@@ -626,7 +626,7 @@ class StrategyRegistry:
 | 阶段 | 状态 | 备注 |
 |---|---|---|
 | A | 已完成 | A1-A3 已完成，本地工程可安装、可运行、可测试 |
-| B | 进行中 | B1-B2 已完成，继续推进策略 YAML 导入导出 |
+| B | 已完成 | B1-B3 已完成，策略对象化和 YAML 文件流转可用 |
 | C | 待开始 | 评分可信度决定进化质量 |
 | D | 待开始 | Arena 是安全网，优先级最高 |
 | E | 待开始 | DreamCycle 不直接上线 |
@@ -736,7 +736,7 @@ class StrategyRegistry:
 - 测试方法：
   - `pytest -q tests/unit/test_strategy_registry.py`
 
-### B3：策略 YAML 导入导出
+### B3：策略 YAML 导入导出（已完成）
 
 - 目标：让策略可以用文件编辑和版本管理。
 - 前置依赖：B1、B2

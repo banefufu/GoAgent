@@ -1,0 +1,34 @@
+id: champion-default
+version: 1
+name: Default evidence-first reviewer
+task_type: code_review
+status: champion
+genome:
+  model:
+    provider: openai_compatible
+    name: gpt-4.1
+    temperature: 0.4
+    top_p: 0.9
+  prompt_genome:
+    role: senior_code_reviewer
+    reasoning_style: evidence_first
+    risk_policy: strict
+    output_format: findings_first
+  tools:
+    enabled:
+      - repo_search
+      - shell_readonly
+      - browser
+  tool_policy:
+    max_calls: 12
+    prefer_read_before_edit: true
+  retry_policy:
+    max_retries: 2
+    retry_on_tool_error: true
+  memory_policy:
+    read_project_memory: true
+    write_long_term_memory: guarded
+parent_ids: []
+created_at: "2026-06-23T00:00:00+00:00"
+updated_at: "2026-06-23T00:00:00+00:00"
+notes: Example editable champion strategy.
