@@ -643,7 +643,7 @@ class StrategyRegistry:
 | D | 已完成 | D1-D4 已完成，Arena 对照实验闭环可生成报告 |
 | E | 已完成 | E1-E3 已完成，DreamCycle 可生成候选并跑 Quick Reject |
 | F | 已完成 | F1-F3 已完成，Genome GA 可生成 candidate population |
-| G | 进行中 | G1-G2 已完成，继续推进 Rollback |
+| G | 已完成 | G1-G3 已完成，Promotion 闭环可推进并回滚 |
 | H | 待开始 | CLI 先于 Dashboard |
 | I | 待开始 | 用 E2E 防止闭环断裂 |
 
@@ -1056,7 +1056,7 @@ class StrategyRegistry:
 - 测试方法：
   - `pytest -q tests/integration/test_promotion_controller.py`
 
-### G3：Rollback
+### G3：Rollback（已完成）
 
 - 目标：支持回滚到最近稳定 champion。
 - 前置依赖：G2
