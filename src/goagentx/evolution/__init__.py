@@ -19,6 +19,13 @@ from goagentx.evolution.scheduler import (
     DegradationResult,
     detect_score_degradation,
 )
+from goagentx.evolution.selection import (
+    ParentSelectionResult,
+    ParentSelectionSettings,
+    ParentSelector,
+    StrategyPerformance,
+    select_parent_pool,
+)
 
 __all__ = [
     "DegradationDetector",
@@ -30,8 +37,13 @@ __all__ = [
     "MutationError",
     "MutationKind",
     "MutationSettings",
+    "ParentSelectionResult",
+    "ParentSelectionSettings",
+    "ParentSelector",
     "StrategyMutator",
+    "StrategyPerformance",
     "detect_score_degradation",
     "load_mutation_settings",
     "run_dreamcycle",
+    "select_parent_pool",
 ]
