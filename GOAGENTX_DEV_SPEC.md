@@ -641,7 +641,7 @@ class StrategyRegistry:
 | B | 已完成 | B1-B3 已完成，策略对象化和 YAML 文件流转可用 |
 | C | 已完成 | C1-C4 已完成，TaskRun 可由 FakeAgentRunner 跑通并评分 |
 | D | 已完成 | D1-D4 已完成，Arena 对照实验闭环可生成报告 |
-| E | 进行中 | E1-E2 已完成，继续推进 DreamCycle 编排 |
+| E | 已完成 | E1-E3 已完成，DreamCycle 可生成候选并跑 Quick Reject |
 | F | 待开始 | GA 只产生候选，不绕过 Arena |
 | G | 待开始 | 上线和回滚必须可审计 |
 | H | 待开始 | CLI 先于 Dashboard |
@@ -946,7 +946,7 @@ class StrategyRegistry:
 - 测试方法：
   - `pytest -q tests/unit/test_mutation.py`
 
-### E3：DreamCycle 编排
+### E3：DreamCycle 编排（已完成）
 
 - 目标：退化触发后生成 1-3 个候选并送入 Arena。
 - 前置依赖：D4、E1、E2
