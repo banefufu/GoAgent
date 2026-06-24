@@ -640,7 +640,7 @@ class StrategyRegistry:
 | A | 已完成 | A1-A3 已完成，本地工程可安装、可运行、可测试 |
 | B | 已完成 | B1-B3 已完成，策略对象化和 YAML 文件流转可用 |
 | C | 已完成 | C1-C4 已完成，TaskRun 可由 FakeAgentRunner 跑通并评分 |
-| D | 待开始 | Arena 是安全网，优先级最高 |
+| D | 进行中 | D1 已完成，继续推进统计显著性检验 |
 | E | 待开始 | DreamCycle 不直接上线 |
 | F | 待开始 | GA 只产生候选，不绕过 Arena |
 | G | 待开始 | 上线和回滚必须可审计 |
@@ -841,7 +841,7 @@ class StrategyRegistry:
 
 目标：实现 GoAgentX 的策略验证网关。
 
-### D1：实现 paired evaluation
+### D1：实现 paired evaluation（已完成）
 
 - 目标：比较 champion 和 candidate 在同一批任务上的表现。
 - 前置依赖：B2、C2、C4
