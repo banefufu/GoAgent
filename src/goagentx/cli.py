@@ -9,12 +9,17 @@ import typer
 import yaml
 
 from goagentx import __version__
-from goagentx.core.strategy import Strategy, StrategyStatus
+from goagentx.adapters.agent_runner import FakeAgentRunner
+from goagentx.arena.report import FullEvalError, run_full_eval_from_settings
 from goagentx.config.settings import DEFAULT_CONFIG_DIR, load_settings
+from goagentx.core.scoring import Scorer
+from goagentx.core.strategy import Strategy, StrategyStatus
+from goagentx.core.task import Task, TaskModelError, load_task_set
 from goagentx.evolution.crossover import StrategyCrossover
 from goagentx.evolution.genome_ga import GenomeGAError, GenomeGASettings, run_genome_ga
 from goagentx.evolution.mutation import StrategyMutator, load_mutation_settings
 from goagentx.registry.db import initialize_database
+from goagentx.registry.experiment_store import EvalExperimentStore
 from goagentx.registry.strategy_io import (
     StrategyIOError,
     export_strategy_yaml,
@@ -78,6 +83,114 @@ def init_command(
     target_path = database_path or settings.database.path
     initialized_path = initialize_database(target_path)
     typer.echo(f"Initialized GoAgentX database at {initialized_path}")
+
+
+@app.command("eval")
+def eval_command(
+    champion_id: Annotated[
+        str,
+        typer.Option(
+            "--champion",
+            help="Champion strategy id.",
+        ),
+    ],
+    candidate_id: Annotated[
+        str,
+        typer.Option(
+            "--candidate",
+            help="Candidate strategy id.",
+        ),
+    ],
+    task_set: Annotated[
+        str,
+        typer.Option(
+            "--task-set",
+            help="Task set id already in the database, or a JSON task-set file path.",
+        ),
+    ],
+    config_dir: Annotated[
+        Path,
+        typer.Option(
+            "--config-dir",
+            help="Directory containing GoAgentX YAML configuration files.",
+        ),
+    ] = DEFAULT_CONFIG_DIR,
+    database_path: Annotated[
+        Path | None,
+        typer.Option(
+            "--database-path",
+            help="Override the configured SQLite database path.",
+        ),
+    ] = None,
+    report_dir: Annotated[
+        Path | None,
+        typer.Option(
+            "--report-dir",
+            help="Override the configured report output directory.",
+        ),
+    ] = None,
+    experiment_id: Annotated[
+        str | None,
+        typer.Option(
+            "--experiment-id",
+            help="Explicit Full Eval experiment id.",
+        ),
+    ] = None,
+    seed: Annotated[
+        int | None,
+        typer.Option(
+            "--seed",
+            help="Random seed for deterministic task selection and stats.",
+        ),
+    ] = 0,
+) -> None:
+    """Run Full Eval for a champion/candidate pair and write a report."""
+    settings = load_settings(config_dir)
+    database = database_path or settings.database.path
+    registry = StrategyRegistry(database)
+    task_store = TaskStore(database)
+    experiment_store = EvalExperimentStore(database)
+
+    try:
+        champion = registry.get(champion_id)
+        candidate = registry.get(candidate_id)
+        tasks, task_set_id = _resolve_eval_tasks(task_store, task_set)
+        result = run_full_eval_from_settings(
+            champion=champion,
+            candidate=candidate,
+            tasks=tasks,
+            champion_runner=FakeAgentRunner(),
+            candidate_runner=FakeAgentRunner(),
+            scorer=Scorer(settings.scoring),
+            arena_settings=settings.arena,
+            gate_settings=settings.promotion_gate,
+            task_set_id=task_set_id,
+            experiment_id=experiment_id,
+            report_directory=report_dir or settings.reports.directory,
+            experiment_store=experiment_store,
+            task_store=task_store,
+            seed=seed,
+        )
+    except (
+        FullEvalError,
+        StrategyRegistryError,
+        TaskModelError,
+        ValueError,
+    ) as exc:
+        typer.echo(f"Eval failed: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+    typer.echo(f"Full Eval verdict: {result.verdict.value}")
+    typer.echo(f"Experiment: {result.experiment_id}")
+    typer.echo(f"Task set: {result.task_set_id}")
+    typer.echo(f"Selected tasks: {len(result.selected_task_ids)}")
+    typer.echo(f"Win rate: {result.evaluation.win_rate:.4f}")
+    typer.echo(f"Avg score delta: {result.evaluation.avg_score_delta:.4f}")
+    typer.echo(f"Report: {result.report_path}")
+    if result.failed_checks:
+        typer.echo("Failed checks:")
+        for check in result.failed_checks:
+            typer.echo(f"- {check}")
 
 
 @strategy_app.command("list")
@@ -380,6 +493,21 @@ def _list_strategies(
     for strategy_status in StrategyStatus:
         strategies.extend(registry.list_by_status(strategy_status))
     return sorted(strategies, key=lambda strategy: (strategy.created_at, strategy.id))
+
+
+def _resolve_eval_tasks(
+    task_store: TaskStore,
+    task_set: str,
+) -> tuple[list[Task], str]:
+    task_set_path = Path(task_set)
+    if task_set_path.exists():
+        loaded = load_task_set(task_set_path)
+        return task_store.save_task_set(loaded), loaded.id
+
+    tasks = task_store.list_tasks(task_set_id=task_set)
+    if not tasks:
+        raise ValueError(f"Task set not found: {task_set}")
+    return tasks, task_set
 
 
 def main() -> None:
