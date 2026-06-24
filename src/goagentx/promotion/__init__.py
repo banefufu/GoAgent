@@ -1,5 +1,11 @@
 """Promotion and rollback controls for GoAgentX."""
 
+from goagentx.promotion.controller import (
+    PromotionController,
+    PromotionControllerError,
+    PromotionEvent,
+    PromotionResult,
+)
 from goagentx.promotion.gate import (
     PromotionDecision,
     PromotionGateMetrics,
@@ -9,9 +15,13 @@ from goagentx.promotion.gate import (
 )
 
 __all__ = [
+    "PromotionController",
+    "PromotionControllerError",
     "PromotionDecision",
+    "PromotionEvent",
     "PromotionGateMetrics",
     "PromotionGateResult",
+    "PromotionResult",
     "evaluate_promotion_gate",
     "promotion_metrics_from_full_eval",
 ]
