@@ -645,7 +645,7 @@ class StrategyRegistry:
 | F | 已完成 | F1-F3 已完成，Genome GA 可生成 candidate population |
 | G | 已完成 | G1-G3 已完成，Promotion 闭环可推进并回滚 |
 | H | 已完成 | H1-H4 已完成，CLI 闭环覆盖 strategy/eval/evolve/promotion |
-| I | 进行中 | I1 已完成，继续推进全链路 E2E |
+| I | 进行中 | I1-I2 已完成，继续推进 README 与运行手册 |
 
 ---
 
@@ -1149,7 +1149,7 @@ class StrategyRegistry:
 - 测试方法：
   - `pytest -q tests/e2e/test_arena_golden_set.py`
 
-### I2：全链路 E2E
+### I2：全链路 E2E（已完成）
 
 - 目标：跑通从退化检测到候选生成、评估、shadow promotion 的全链路。
 - 前置依赖：A-H
