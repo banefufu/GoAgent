@@ -14,6 +14,7 @@ from goagentx.registry.strategy_registry import (
     StrategyRegistry,
     StrategyRegistryError,
 )
+from goagentx.registry.task_store import TaskStore, TaskStoreError, TaskStoreNotFoundError
 
 __all__ = [
     "StrategyAlreadyExistsError",
@@ -21,6 +22,9 @@ __all__ = [
     "StrategyNotFoundError",
     "StrategyRegistry",
     "StrategyRegistryError",
+    "TaskStore",
+    "TaskStoreError",
+    "TaskStoreNotFoundError",
     "export_strategy_yaml",
     "import_strategy_yaml",
     "initialize_database",

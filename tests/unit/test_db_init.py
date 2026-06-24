@@ -61,6 +61,49 @@ def test_initialize_database_migrates_strategy_task_type_column(tmp_path: Path) 
     assert "task_type" in _column_names(database_path, "strategies")
 
 
+def test_initialize_database_migrates_task_store_columns(tmp_path: Path) -> None:
+    database_path = tmp_path / "data" / "goagentx.db"
+    database_path.parent.mkdir()
+    with sqlite3.connect(database_path) as connection:
+        connection.execute(
+            """
+            CREATE TABLE tasks (
+              id TEXT PRIMARY KEY,
+              task_type TEXT NOT NULL,
+              bucket TEXT NOT NULL,
+              input_json TEXT NOT NULL,
+              expected_json TEXT,
+              tags_json TEXT NOT NULL,
+              created_at TEXT NOT NULL
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE task_runs (
+              id TEXT PRIMARY KEY,
+              task_id TEXT NOT NULL,
+              strategy_id TEXT NOT NULL,
+              experiment_id TEXT,
+              output_json TEXT NOT NULL,
+              score REAL NOT NULL,
+              success INTEGER NOT NULL,
+              cost REAL NOT NULL,
+              latency_ms INTEGER NOT NULL,
+              token_count INTEGER NOT NULL,
+              tool_calls_json TEXT NOT NULL,
+              error_json TEXT,
+              created_at TEXT NOT NULL
+            )
+            """
+        )
+
+    initialize_database(database_path)
+
+    assert "task_set_id" in _column_names(database_path, "tasks")
+    assert "score_breakdown_json" in _column_names(database_path, "task_runs")
+
+
 def test_init_command_uses_configured_database_path(tmp_path: Path) -> None:
     config_dir = _write_config_set(tmp_path)
     database_path = tmp_path / "custom" / "goagentx.db"

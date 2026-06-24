@@ -31,6 +31,7 @@ class Task(StrictModel):
     """A reusable task that can be replayed across strategies."""
 
     id: NonEmptyString
+    task_set_id: NonEmptyString | None = None
     task_type: NonEmptyString
     bucket: NonEmptyString
     input_json: dict[str, Any]

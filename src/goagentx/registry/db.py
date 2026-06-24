@@ -33,6 +33,7 @@ def initialize_database(database_path: str | Path) -> Path:
         with sqlite3.connect(target_path) as connection:
             connection.executescript(schema_sql)
             _ensure_strategy_schema(connection)
+            _ensure_task_schema(connection)
             connection.commit()
     except sqlite3.Error as exc:
         raise DatabaseInitializationError(
@@ -61,6 +62,42 @@ def _ensure_strategy_schema(connection: sqlite3.Connection) -> None:
         CREATE UNIQUE INDEX IF NOT EXISTS idx_strategies_single_champion_task_type
         ON strategies(task_type)
         WHERE status = 'champion' AND task_type IS NOT NULL
+        """
+    )
+
+
+def _ensure_task_schema(connection: sqlite3.Connection) -> None:
+    """Apply small migrations and indexes for tasks and task_runs."""
+    task_columns = {
+        row[1] for row in connection.execute("PRAGMA table_info(tasks)").fetchall()
+    }
+    if "task_set_id" not in task_columns:
+        connection.execute("ALTER TABLE tasks ADD COLUMN task_set_id TEXT")
+
+    task_run_columns = {
+        row[1] for row in connection.execute("PRAGMA table_info(task_runs)").fetchall()
+    }
+    if "score_breakdown_json" not in task_run_columns:
+        connection.execute(
+            "ALTER TABLE task_runs ADD COLUMN score_breakdown_json TEXT NOT NULL DEFAULT '{}'"
+        )
+
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_tasks_task_type_bucket
+        ON tasks(task_type, bucket)
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_tasks_task_set_id
+        ON tasks(task_set_id)
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_task_runs_recent
+        ON task_runs(created_at DESC)
         """
     )
     connection.execute(

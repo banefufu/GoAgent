@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS strategies (
 
 CREATE TABLE IF NOT EXISTS tasks (
   id TEXT PRIMARY KEY,
+  task_set_id TEXT,
   task_type TEXT NOT NULL,
   bucket TEXT NOT NULL,
   input_json TEXT NOT NULL,
@@ -28,6 +29,7 @@ CREATE TABLE IF NOT EXISTS task_runs (
   experiment_id TEXT,
   output_json TEXT NOT NULL,
   score REAL NOT NULL,
+  score_breakdown_json TEXT NOT NULL,
   success INTEGER NOT NULL,
   cost REAL NOT NULL,
   latency_ms INTEGER NOT NULL,

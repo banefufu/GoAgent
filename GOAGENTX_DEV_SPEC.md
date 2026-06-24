@@ -324,6 +324,7 @@ CREATE TABLE strategies (
 ```sql
 CREATE TABLE tasks (
   id TEXT PRIMARY KEY,
+  task_set_id TEXT,
   task_type TEXT NOT NULL,
   bucket TEXT NOT NULL,
   input_json TEXT NOT NULL,
@@ -343,6 +344,7 @@ CREATE TABLE task_runs (
   experiment_id TEXT,
   output_json TEXT NOT NULL,
   score REAL NOT NULL,
+  score_breakdown_json TEXT NOT NULL,
   success INTEGER NOT NULL,
   cost REAL NOT NULL,
   latency_ms INTEGER NOT NULL,
@@ -627,7 +629,7 @@ class StrategyRegistry:
 |---|---|---|
 | A | 已完成 | A1-A3 已完成，本地工程可安装、可运行、可测试 |
 | B | 已完成 | B1-B3 已完成，策略对象化和 YAML 文件流转可用 |
-| C | 进行中 | C1 已完成，继续推进 TaskStore 持久化 |
+| C | 进行中 | C1-C2 已完成，继续推进 Scorer |
 | D | 待开始 | Arena 是安全网，优先级最高 |
 | E | 待开始 | DreamCycle 不直接上线 |
 | F | 待开始 | GA 只产生候选，不绕过 Arena |
@@ -775,7 +777,7 @@ class StrategyRegistry:
 - 测试方法：
   - `pytest -q tests/unit/test_task_model.py`
 
-### C2：实现 TaskStore
+### C2：实现 TaskStore（已完成）
 
 - 目标：持久化任务和运行记录。
 - 前置依赖：A3、C1
