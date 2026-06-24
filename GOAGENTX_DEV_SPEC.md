@@ -644,7 +644,7 @@ class StrategyRegistry:
 | E | 已完成 | E1-E3 已完成，DreamCycle 可生成候选并跑 Quick Reject |
 | F | 已完成 | F1-F3 已完成，Genome GA 可生成 candidate population |
 | G | 已完成 | G1-G3 已完成，Promotion 闭环可推进并回滚 |
-| H | 进行中 | H1-H2 已完成，继续推进 Evolve CLI |
+| H | 进行中 | H1-H3 已完成，继续推进 Promotion CLI |
 | I | 待开始 | 用 E2E 防止闭环断裂 |
 
 ---
@@ -1102,7 +1102,7 @@ class StrategyRegistry:
 - 测试方法：
   - `pytest -q tests/integration/test_eval_cli.py`
 
-### H3：Evolve CLI
+### H3：Evolve CLI（已完成）
 
 - 目标：实现 DreamCycle 和 Genome GA 命令入口。
 - 前置依赖：E3、F3

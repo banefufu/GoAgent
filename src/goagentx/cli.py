@@ -16,6 +16,7 @@ from goagentx.core.scoring import Scorer
 from goagentx.core.strategy import Strategy, StrategyStatus
 from goagentx.core.task import Task, TaskModelError, load_task_set
 from goagentx.evolution.crossover import StrategyCrossover
+from goagentx.evolution.dreamcycle import DreamCycleError, run_dreamcycle
 from goagentx.evolution.genome_ga import GenomeGAError, GenomeGASettings, run_genome_ga
 from goagentx.evolution.mutation import StrategyMutator, load_mutation_settings
 from goagentx.registry.db import initialize_database
@@ -471,6 +472,134 @@ def evolve_ga_command(
     )
     for candidate_id in result.candidate_ids:
         typer.echo(f"- {candidate_id}")
+
+
+@evolve_app.command("dream")
+def evolve_dream_command(
+    strategy_id: Annotated[
+        str,
+        typer.Option(
+            "--strategy",
+            help="Champion strategy id to evolve from.",
+        ),
+    ],
+    config_dir: Annotated[
+        Path,
+        typer.Option(
+            "--config-dir",
+            help="Directory containing GoAgentX YAML configuration files.",
+        ),
+    ] = DEFAULT_CONFIG_DIR,
+    database_path: Annotated[
+        Path | None,
+        typer.Option(
+            "--database-path",
+            help="Override the configured SQLite database path.",
+        ),
+    ] = None,
+    task_type: Annotated[
+        str | None,
+        typer.Option(
+            "--task-type",
+            help="Restrict degradation detection and Arena tasks to a task type.",
+        ),
+    ] = None,
+    task_set: Annotated[
+        str | None,
+        typer.Option(
+            "--task-set",
+            help="Optional task set id already in the database, or a JSON task-set file path.",
+        ),
+    ] = None,
+    candidate_count: Annotated[
+        int,
+        typer.Option(
+            "--candidate-count",
+            help="Number of candidates to generate, from 1 to 3.",
+        ),
+    ] = 3,
+    auto_run_arena: Annotated[
+        bool,
+        typer.Option(
+            "--auto-run-arena/--no-auto-run-arena",
+            help="Run Quick Reject for each generated candidate.",
+        ),
+    ] = True,
+    manual_trigger: Annotated[
+        bool,
+        typer.Option(
+            "--manual-trigger/--require-degradation",
+            help="Generate candidates immediately, or require degradation detection first.",
+        ),
+    ] = True,
+    audit_log_path: Annotated[
+        Path | None,
+        typer.Option(
+            "--audit-log",
+            help="DreamCycle JSONL audit log path.",
+        ),
+    ] = None,
+    seed: Annotated[
+        int | None,
+        typer.Option(
+            "--seed",
+            help="Random seed for mutation and Quick Reject selection.",
+        ),
+    ] = 0,
+) -> None:
+    """Generate DreamCycle candidates and optionally run Quick Reject."""
+    settings = load_settings(config_dir)
+    database = database_path or settings.database.path
+    registry = StrategyRegistry(database)
+    task_store = TaskStore(database)
+    mutation_settings = load_mutation_settings(config_dir)
+
+    if task_set is not None:
+        try:
+            _resolve_eval_tasks(task_store, task_set)
+        except (TaskModelError, ValueError) as exc:
+            typer.echo(f"DreamCycle failed: {exc}", err=True)
+            raise typer.Exit(code=1) from exc
+
+    resolved_audit_log_path = audit_log_path or (
+        settings.reports.directory / f"dreamcycle-{strategy_id}.jsonl"
+    )
+    try:
+        result = run_dreamcycle(
+            champion_id=strategy_id,
+            registry=registry,
+            task_store=task_store,
+            mutator=StrategyMutator(mutation_settings, seed=seed),
+            scorer=Scorer(settings.scoring),
+            runner=FakeAgentRunner(),
+            candidate_runner=FakeAgentRunner(),
+            evolution_settings=settings.evolution,
+            arena_settings=settings.arena,
+            audit_log_path=resolved_audit_log_path,
+            task_type=task_type,
+            candidate_count=candidate_count,
+            auto_run_arena=auto_run_arena,
+            manual_trigger=manual_trigger,
+            seed=seed,
+        )
+    except (DreamCycleError, StrategyRegistryError, ValueError) as exc:
+        typer.echo(f"DreamCycle failed: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+    typer.echo(f"DreamCycle triggered: {str(result.triggered).lower()}")
+    typer.echo(f"Reason: {result.reason}")
+    typer.echo(f"Audit log: {result.audit_log_path}")
+    typer.echo(f"Generated candidates: {len(result.candidates)}")
+    for candidate in result.candidates:
+        typer.echo(
+            f"- {candidate.candidate.id} "
+            f"mutation={candidate.mutation_kind.value}"
+        )
+        if candidate.quick_reject is not None:
+            typer.echo(
+                "  quick_reject="
+                f"{candidate.quick_reject.decision.value}"
+            )
 
 
 def _strategy_registry(
