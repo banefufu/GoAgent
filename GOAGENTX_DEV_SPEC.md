@@ -641,7 +641,7 @@ class StrategyRegistry:
 | B | 已完成 | B1-B3 已完成，策略对象化和 YAML 文件流转可用 |
 | C | 已完成 | C1-C4 已完成，TaskRun 可由 FakeAgentRunner 跑通并评分 |
 | D | 已完成 | D1-D4 已完成，Arena 对照实验闭环可生成报告 |
-| E | 待开始 | DreamCycle 不直接上线 |
+| E | 进行中 | E1 已完成，继续推进 Mutation |
 | F | 待开始 | GA 只产生候选，不绕过 Arena |
 | G | 待开始 | 上线和回滚必须可审计 |
 | H | 待开始 | CLI 先于 Dashboard |
@@ -911,7 +911,7 @@ class StrategyRegistry:
 
 目标：在检测到退化时生成少量高质量候选，但不直接上线。
 
-### E1：退化检测
+### E1：退化检测（已完成）
 
 - 目标：实现 score drop 检测。
 - 前置依赖：C2

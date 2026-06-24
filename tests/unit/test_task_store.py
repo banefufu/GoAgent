@@ -126,6 +126,26 @@ def test_list_recent_runs_filters_by_experiment_id(tmp_path: Path) -> None:
     assert [task_run.id for task_run in recent_runs] == ["run-002"]
 
 
+def test_list_recent_runs_filters_by_task_type(tmp_path: Path) -> None:
+    store = TaskStore(tmp_path / "goagentx.db")
+    store.save_task(_task("doc-001", task_type="doc_qa", bucket="baseline"))
+    store.save_task(_task("code-001", task_type="code_review", bucket="critical"))
+    store.save_run(
+        _task_run("run-doc", task_id="doc-001", strategy_id="strategy-001")
+    )
+    store.save_run(
+        _task_run("run-code", task_id="code-001", strategy_id="strategy-001")
+    )
+
+    recent_runs = store.list_recent_runs(
+        limit=10,
+        strategy_id="strategy-001",
+        task_type="code_review",
+    )
+
+    assert [task_run.id for task_run in recent_runs] == ["run-code"]
+
+
 def _task(
     task_id: str,
     *,

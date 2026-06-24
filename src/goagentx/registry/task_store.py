@@ -153,29 +153,36 @@ class TaskStore:
         task_id: str | None = None,
         strategy_id: str | None = None,
         experiment_id: str | None = None,
+        task_type: str | None = None,
     ) -> list[TaskRun]:
         """List recent task runs with optional filters."""
         where_clauses: list[str] = []
         parameters: list[Any] = []
         if task_id is not None:
-            where_clauses.append("task_id = ?")
+            where_clauses.append("tr.task_id = ?")
             parameters.append(task_id)
         if strategy_id is not None:
-            where_clauses.append("strategy_id = ?")
+            where_clauses.append("tr.strategy_id = ?")
             parameters.append(strategy_id)
         if experiment_id is not None:
-            where_clauses.append("experiment_id = ?")
+            where_clauses.append("tr.experiment_id = ?")
             parameters.append(experiment_id)
+        if task_type is not None:
+            where_clauses.append("t.task_type = ?")
+            parameters.append(task_type)
 
         sql = """
-            SELECT id, task_id, strategy_id, experiment_id, output_json, score,
-                   score_breakdown_json, success, cost, latency_ms, token_count,
-                   tool_calls_json, error_json, created_at
-            FROM task_runs
+            SELECT tr.id, tr.task_id, tr.strategy_id, tr.experiment_id,
+                   tr.output_json, tr.score, tr.score_breakdown_json, tr.success,
+                   tr.cost, tr.latency_ms, tr.token_count, tr.tool_calls_json,
+                   tr.error_json, tr.created_at
+            FROM task_runs tr
         """
+        if task_type is not None:
+            sql += " JOIN tasks t ON t.id = tr.task_id"
         if where_clauses:
             sql += " WHERE " + " AND ".join(where_clauses)
-        sql += " ORDER BY created_at DESC, id DESC LIMIT ?"
+        sql += " ORDER BY tr.created_at DESC, tr.id DESC LIMIT ?"
         parameters.append(limit)
 
         with self._connect() as connection:
