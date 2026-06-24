@@ -645,7 +645,7 @@ class StrategyRegistry:
 | F | 已完成 | F1-F3 已完成，Genome GA 可生成 candidate population |
 | G | 已完成 | G1-G3 已完成，Promotion 闭环可推进并回滚 |
 | H | 已完成 | H1-H4 已完成，CLI 闭环覆盖 strategy/eval/evolve/promotion |
-| I | 待开始 | 用 E2E 防止闭环断裂 |
+| I | 进行中 | I1 已完成，继续推进全链路 E2E |
 
 ---
 
@@ -1133,7 +1133,7 @@ class StrategyRegistry:
 
 目标：证明 GoAgentX 的最小闭环真实可用。
 
-### I1：Golden Task Set
+### I1：Golden Task Set（已完成）
 
 - 目标：建立固定样例任务集。
 - 修改文件：

@@ -1,0 +1,84 @@
+{
+  "id": "golden-agent-tasks",
+  "description": "Golden task set covering doc QA, code review, and tool-use style agent workflows.",
+  "tasks": [
+    {
+      "id": "golden-doc-001",
+      "task_type": "doc_qa",
+      "bucket": "baseline",
+      "input_json": {
+        "question": "What does GoAgentX evolve?",
+        "context": "GoAgentX evolves structured agent strategies and validates them before promotion."
+      },
+      "expected_json": {
+        "contains": ["structured agent strategies", "promotion"]
+      },
+      "tags": ["golden", "docs", "qa"]
+    },
+    {
+      "id": "golden-doc-002",
+      "task_type": "doc_qa",
+      "bucket": "edge",
+      "input_json": {
+        "question": "Why should a candidate strategy not become champion immediately?",
+        "context": "Candidates must pass Arena, promotion gates, and audited rollout stages."
+      },
+      "expected_json": {
+        "contains": ["Arena", "promotion gates", "audited"]
+      },
+      "tags": ["golden", "docs", "edge"]
+    },
+    {
+      "id": "golden-code-001",
+      "task_type": "code_review",
+      "bucket": "critical",
+      "input_json": {
+        "diff": "def add(a, b): return a - b",
+        "language": "python"
+      },
+      "expected_json": {
+        "finding": "subtraction used instead of addition"
+      },
+      "tags": ["golden", "code", "review", "critical"]
+    },
+    {
+      "id": "golden-code-002",
+      "task_type": "code_review",
+      "bucket": "baseline",
+      "input_json": {
+        "diff": "if user.is_admin = True: allow()",
+        "language": "python"
+      },
+      "expected_json": {
+        "finding": "assignment used instead of comparison"
+      },
+      "tags": ["golden", "code", "review"]
+    },
+    {
+      "id": "golden-tool-001",
+      "task_type": "tool_use",
+      "bucket": "critical",
+      "input_json": {
+        "goal": "Inspect a repository before editing a file.",
+        "available_tools": ["repo_search", "shell_readonly", "apply_patch"]
+      },
+      "expected_json": {
+        "contains": ["repo_search", "shell_readonly", "apply_patch"]
+      },
+      "tags": ["golden", "tool_use", "critical"]
+    },
+    {
+      "id": "golden-tool-002",
+      "task_type": "tool_use",
+      "bucket": "edge",
+      "input_json": {
+        "goal": "Handle a failing command by collecting evidence before retrying.",
+        "available_tools": ["shell_readonly", "test_runner"]
+      },
+      "expected_json": {
+        "contains": ["evidence", "retry", "test_runner"]
+      },
+      "tags": ["golden", "tool_use", "edge"]
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+id: candidate_bad
+version: 2
+name: Golden bad candidate
+task_type: null
+status: candidate
+genome:
+  model:
+    provider: openai_compatible
+    name: gpt-4.1
+    temperature: 1.4
+    top_p: 0.98
+  prompt_genome:
+    role: terse_guessing_agent
+    reasoning_style: intuition_first
+    risk_policy: permissive
+    output_format: unstructured_notes
+  tools:
+    enabled:
+      - browser
+  tool_policy:
+    max_calls: 3
+    prefer_read_before_edit: false
+  retry_policy:
+    max_retries: 0
+    retry_on_tool_error: false
+  memory_policy:
+    read_project_memory: false
+    write_long_term_memory: never
+parent_ids:
+  - champion
+created_at: "2026-06-24T00:10:00+00:00"
+updated_at: "2026-06-24T00:10:00+00:00"
+notes: Golden-set candidate expected to fail Arena guardrails in deterministic tests.
