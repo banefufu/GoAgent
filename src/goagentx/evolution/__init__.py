@@ -15,6 +15,14 @@ from goagentx.evolution.dreamcycle import (
     DreamCycleResult,
     run_dreamcycle,
 )
+from goagentx.evolution.genome_ga import (
+    GenomeGACandidateResult,
+    GenomeGAError,
+    GenomeGAOperation,
+    GenomeGAResult,
+    GenomeGASettings,
+    run_genome_ga,
+)
 from goagentx.evolution.mutation import (
     MutationError,
     MutationKind,
@@ -45,6 +53,11 @@ __all__ = [
     "DreamCycleCandidateResult",
     "DreamCycleError",
     "DreamCycleResult",
+    "GenomeGACandidateResult",
+    "GenomeGAError",
+    "GenomeGAOperation",
+    "GenomeGAResult",
+    "GenomeGASettings",
     "MutationError",
     "MutationKind",
     "MutationSettings",
@@ -58,6 +71,7 @@ __all__ = [
     "load_mutation_settings",
     "prompt_module_crossover",
     "run_dreamcycle",
+    "run_genome_ga",
     "select_parent_pool",
     "uniform_crossover",
 ]

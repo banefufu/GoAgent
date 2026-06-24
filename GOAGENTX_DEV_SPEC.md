@@ -642,7 +642,7 @@ class StrategyRegistry:
 | C | 已完成 | C1-C4 已完成，TaskRun 可由 FakeAgentRunner 跑通并评分 |
 | D | 已完成 | D1-D4 已完成，Arena 对照实验闭环可生成报告 |
 | E | 已完成 | E1-E3 已完成，DreamCycle 可生成候选并跑 Quick Reject |
-| F | 进行中 | F1-F2 已完成，继续推进 GA 编排 |
+| F | 已完成 | F1-F3 已完成，Genome GA 可生成 candidate population |
 | G | 待开始 | 上线和回滚必须可审计 |
 | H | 待开始 | CLI 先于 Dashboard |
 | I | 待开始 | 用 E2E 防止闭环断裂 |
@@ -1000,7 +1000,7 @@ class StrategyRegistry:
 - 测试方法：
   - `pytest -q tests/unit/test_crossover.py`
 
-### F3：GA 编排
+### F3：GA 编排（已完成）
 
 - 目标：生成下一代 population。
 - 前置依赖：F1、F2、E2
