@@ -1,5 +1,13 @@
 """Evolution workflows for GoAgentX."""
 
+from goagentx.evolution.crossover import (
+    CrossoverError,
+    CrossoverKind,
+    CrossoverSettings,
+    StrategyCrossover,
+    prompt_module_crossover,
+    uniform_crossover,
+)
 from goagentx.evolution.dreamcycle import (
     DreamCycleAuditLogger,
     DreamCycleCandidateResult,
@@ -28,6 +36,9 @@ from goagentx.evolution.selection import (
 )
 
 __all__ = [
+    "CrossoverError",
+    "CrossoverKind",
+    "CrossoverSettings",
     "DegradationDetector",
     "DegradationResult",
     "DreamCycleAuditLogger",
@@ -40,10 +51,13 @@ __all__ = [
     "ParentSelectionResult",
     "ParentSelectionSettings",
     "ParentSelector",
+    "StrategyCrossover",
     "StrategyMutator",
     "StrategyPerformance",
     "detect_score_degradation",
     "load_mutation_settings",
+    "prompt_module_crossover",
     "run_dreamcycle",
     "select_parent_pool",
+    "uniform_crossover",
 ]
