@@ -19,6 +19,9 @@ from goagentx.evolution.crossover import StrategyCrossover
 from goagentx.evolution.dreamcycle import DreamCycleError, run_dreamcycle
 from goagentx.evolution.genome_ga import GenomeGAError, GenomeGASettings, run_genome_ga
 from goagentx.evolution.mutation import StrategyMutator, load_mutation_settings
+from goagentx.promotion.controller import PromotionController, PromotionControllerError
+from goagentx.promotion.gate import PromotionGateMetrics, evaluate_promotion_gate
+from goagentx.promotion.rollback import RollbackController, RollbackControllerError
 from goagentx.registry.db import initialize_database
 from goagentx.registry.experiment_store import EvalExperimentStore
 from goagentx.registry.strategy_io import (
@@ -192,6 +195,228 @@ def eval_command(
         typer.echo("Failed checks:")
         for check in result.failed_checks:
             typer.echo(f"- {check}")
+
+
+@app.command("promote")
+def promote_command(
+    candidate_id: Annotated[
+        str,
+        typer.Option(
+            "--candidate",
+            help="Candidate strategy id to promote.",
+        ),
+    ],
+    mode: Annotated[
+        str,
+        typer.Option(
+            "--mode",
+            help="Target promotion status: shadow, canary, or champion.",
+        ),
+    ],
+    config_dir: Annotated[
+        Path,
+        typer.Option(
+            "--config-dir",
+            help="Directory containing GoAgentX YAML configuration files.",
+        ),
+    ] = DEFAULT_CONFIG_DIR,
+    database_path: Annotated[
+        Path | None,
+        typer.Option(
+            "--database-path",
+            help="Override the configured SQLite database path.",
+        ),
+    ] = None,
+    experiment_id: Annotated[
+        str | None,
+        typer.Option(
+            "--experiment-id",
+            help="Full Eval experiment id or manual approval label.",
+        ),
+    ] = None,
+    champion_id: Annotated[
+        str | None,
+        typer.Option(
+            "--champion",
+            help="Champion id used for gate metrics. Defaults to current domain champion.",
+        ),
+    ] = None,
+    win_rate: Annotated[
+        float,
+        typer.Option(
+            "--win-rate",
+            help="Gate metric used for manual promotion approval.",
+        ),
+    ] = 1.0,
+    p_value: Annotated[
+        float,
+        typer.Option(
+            "--p-value",
+            help="Gate metric used for manual promotion approval.",
+        ),
+    ] = 0.0,
+    avg_score_delta: Annotated[
+        float,
+        typer.Option(
+            "--avg-score-delta",
+            help="Gate metric used for manual promotion approval.",
+        ),
+    ] = 0.1,
+    cost_delta: Annotated[
+        float,
+        typer.Option(
+            "--cost-delta",
+            help="Gate metric used for manual promotion approval.",
+        ),
+    ] = 0.0,
+    latency_delta: Annotated[
+        float,
+        typer.Option(
+            "--latency-delta",
+            help="Gate metric used for manual promotion approval.",
+        ),
+    ] = 0.0,
+    safety_violation_count: Annotated[
+        int,
+        typer.Option(
+            "--safety-violation-count",
+            help="Gate metric used for manual promotion approval.",
+        ),
+    ] = 0,
+    critical_bucket_regression: Annotated[
+        bool,
+        typer.Option(
+            "--critical-bucket-regression/--no-critical-bucket-regression",
+            help="Gate metric used for manual promotion approval.",
+        ),
+    ] = False,
+    reason: Annotated[
+        str | None,
+        typer.Option(
+            "--reason",
+            help="Audit reason for the promotion event.",
+        ),
+    ] = None,
+) -> None:
+    """Promote a candidate through shadow, canary, and champion states."""
+    settings = load_settings(config_dir)
+    registry = StrategyRegistry(database_path or settings.database.path)
+    try:
+        candidate = registry.get(candidate_id)
+        resolved_target = StrategyStatus(mode)
+        resolved_champion_id = champion_id or registry.get_champion(candidate.task_type).id
+        gate = evaluate_promotion_gate(
+            PromotionGateMetrics(
+                experiment_id=experiment_id or f"manual-promotion-{candidate.id}",
+                champion_id=resolved_champion_id,
+                candidate_id=candidate.id,
+                win_rate=win_rate,
+                p_value=p_value,
+                avg_score_delta=avg_score_delta,
+                cost_delta=cost_delta,
+                latency_delta=latency_delta,
+                safety_violation_count=safety_violation_count,
+                critical_bucket_regression=critical_bucket_regression,
+            ),
+            settings.promotion_gate,
+        )
+        if not gate.approved:
+            typer.echo(
+                "Promotion gate rejected: " + ", ".join(gate.failed_checks),
+                err=True,
+            )
+            raise typer.Exit(code=1)
+        result = PromotionController(registry).promote(
+            candidate.id,
+            target_status=resolved_target,
+            gate=gate,
+            reason=reason,
+        )
+    except (
+        PromotionControllerError,
+        StrategyRegistryError,
+        ValueError,
+    ) as exc:
+        typer.echo(f"Promotion failed: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+    typer.echo(
+        f"Promoted {result.strategy.id}: "
+        f"{result.event.from_status.value} -> {result.event.to_status.value}"
+    )
+    typer.echo(f"Gate decision: {result.gate.decision.value}")
+    typer.echo(f"Event: {result.event.id}")
+
+
+@app.command("rollback")
+def rollback_command(
+    to_strategy_id: Annotated[
+        str,
+        typer.Option(
+            "--to",
+            help="Stable strategy id to restore.",
+        ),
+    ],
+    config_dir: Annotated[
+        Path,
+        typer.Option(
+            "--config-dir",
+            help="Directory containing GoAgentX YAML configuration files.",
+        ),
+    ] = DEFAULT_CONFIG_DIR,
+    database_path: Annotated[
+        Path | None,
+        typer.Option(
+            "--database-path",
+            help="Override the configured SQLite database path.",
+        ),
+    ] = None,
+    failed_strategy_id: Annotated[
+        str | None,
+        typer.Option(
+            "--failed",
+            help="Failed shadow, canary, or champion strategy id.",
+        ),
+    ] = None,
+    failed_status: Annotated[
+        str,
+        typer.Option(
+            "--failed-status",
+            help="Status assigned to the failed strategy: rolled_back or retired.",
+        ),
+    ] = StrategyStatus.ROLLED_BACK.value,
+    reason: Annotated[
+        str | None,
+        typer.Option(
+            "--reason",
+            help="Audit reason for rollback events.",
+        ),
+    ] = None,
+) -> None:
+    """Rollback to a stable strategy and audit the status changes."""
+    settings = load_settings(config_dir)
+    registry = StrategyRegistry(database_path or settings.database.path)
+    try:
+        result = RollbackController(registry).rollback(
+            to_strategy_id,
+            failed_strategy_id=failed_strategy_id,
+            failed_status=StrategyStatus(failed_status),
+            reason=reason,
+        )
+    except (RollbackControllerError, StrategyRegistryError, ValueError) as exc:
+        typer.echo(f"Rollback failed: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+    typer.echo(
+        f"Rollback restored {result.restored_strategy.id} "
+        f"as {result.restored_strategy.status.value}."
+    )
+    if result.failed_strategy is not None:
+        typer.echo(
+            f"Failed strategy {result.failed_strategy.id} "
+            f"marked {result.failed_strategy.status.value}."
+        )
+    typer.echo(f"Events written: {len(result.events)}")
 
 
 @strategy_app.command("list")
