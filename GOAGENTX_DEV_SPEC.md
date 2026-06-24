@@ -641,7 +641,7 @@ class StrategyRegistry:
 | B | 已完成 | B1-B3 已完成，策略对象化和 YAML 文件流转可用 |
 | C | 已完成 | C1-C4 已完成，TaskRun 可由 FakeAgentRunner 跑通并评分 |
 | D | 已完成 | D1-D4 已完成，Arena 对照实验闭环可生成报告 |
-| E | 进行中 | E1 已完成，继续推进 Mutation |
+| E | 进行中 | E1-E2 已完成，继续推进 DreamCycle 编排 |
 | F | 待开始 | GA 只产生候选，不绕过 Arena |
 | G | 待开始 | 上线和回滚必须可审计 |
 | H | 待开始 | CLI 先于 Dashboard |
@@ -928,7 +928,7 @@ class StrategyRegistry:
 - 测试方法：
   - `pytest -q tests/unit/test_degradation_detector.py`
 
-### E2：变异器 Mutation
+### E2：变异器 Mutation（已完成）
 
 - 目标：从当前策略生成参数、prompt、工具三类候选。
 - 前置依赖：B1

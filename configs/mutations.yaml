@@ -1,0 +1,44 @@
+parameters:
+  temperature:
+    min: 0.0
+    max: 1.2
+    delta: 0.1
+  top_p:
+    min: 0.5
+    max: 1.0
+    delta: 0.05
+  max_tool_calls:
+    min: 4
+    max: 20
+    delta: 2
+  max_retries:
+    min: 0
+    max: 4
+    delta: 1
+
+prompt:
+  role:
+    - senior_code_reviewer
+    - cautious_debugger
+    - production_incident_analyst
+  reasoning_style:
+    - evidence_first
+    - hypothesis_driven
+    - checklist_driven
+  risk_policy:
+    - strict
+    - conservative
+    - safety_first
+  output_format:
+    - findings_first
+    - concise_patch_plan
+    - risk_summary
+
+tools:
+  allowlist:
+    - repo_search
+    - shell_readonly
+    - browser
+    - python_readonly
+  min_enabled: 1
+  max_enabled: 4
