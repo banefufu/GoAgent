@@ -645,7 +645,7 @@ class StrategyRegistry:
 | F | 已完成 | F1-F3 已完成，Genome GA 可生成 candidate population |
 | G | 已完成 | G1-G3 已完成，Promotion 闭环可推进并回滚 |
 | H | 已完成 | H1-H4 已完成，CLI 闭环覆盖 strategy/eval/evolve/promotion |
-| I | 进行中 | I1-I2 已完成，继续推进 README 与运行手册 |
+| I | 已完成 | I1-I3 已完成，E2E 验收与 README 收口完成 |
 
 ---
 
@@ -1163,7 +1163,7 @@ class StrategyRegistry:
 - 测试方法：
   - `pytest -q tests/e2e/test_evolution_flow.py`
 
-### I3：README 与运行手册
+### I3：README 与运行手册（已完成）
 
 - 目标：让新开发者 10 分钟内跑通本地 MVP。
 - 修改文件：
