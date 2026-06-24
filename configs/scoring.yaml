@@ -3,4 +3,7 @@ weights:
   cost: 0.10
   latency: 0.10
   safety: 0.10
+normalization:
+  max_cost: 1.0
+  max_latency_ms: 10000
 safety_penalty: 1.0

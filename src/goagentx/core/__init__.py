@@ -1,5 +1,6 @@
 """Core domain models for GoAgentX."""
 
+from goagentx.core.scoring import Scorer, ScoringInput, ScoreResult
 from goagentx.core.strategy import (
     Genome,
     MemoryPolicy,
@@ -19,6 +20,9 @@ __all__ = [
     "ModelGenome",
     "PromptGenome",
     "RetryPolicy",
+    "Scorer",
+    "ScoringInput",
+    "ScoreResult",
     "Strategy",
     "StrategyStatus",
     "Task",

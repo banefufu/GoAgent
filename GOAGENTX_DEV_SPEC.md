@@ -290,6 +290,16 @@ arena:
   full_eval_rounds: 50
   min_win_rate: 0.55
   p_value_threshold: 0.05
+scoring:
+  weights:
+    quality: 0.70
+    cost: 0.10
+    latency: 0.10
+    safety: 0.10
+  normalization:
+    max_cost: 1.0
+    max_latency_ms: 10000
+  safety_penalty: 1.0
 promotion:
   max_cost_delta: 0.20
   max_latency_delta: 0.20
@@ -629,7 +639,7 @@ class StrategyRegistry:
 |---|---|---|
 | A | 已完成 | A1-A3 已完成，本地工程可安装、可运行、可测试 |
 | B | 已完成 | B1-B3 已完成，策略对象化和 YAML 文件流转可用 |
-| C | 进行中 | C1-C2 已完成，继续推进 Scorer |
+| C | 进行中 | C1-C3 已完成，继续推进 AgentRunner 适配层 |
 | D | 待开始 | Arena 是安全网，优先级最高 |
 | E | 待开始 | DreamCycle 不直接上线 |
 | F | 待开始 | GA 只产生候选，不绕过 Arena |
@@ -792,7 +802,7 @@ class StrategyRegistry:
 - 测试方法：
   - `pytest -q tests/unit/test_task_store.py`
 
-### C3：实现 Scorer
+### C3：实现 Scorer（已完成）
 
 - 目标：计算组合分和分项说明。
 - 前置依赖：A2、C1

@@ -61,10 +61,18 @@ class ScoringWeights(StrictModel):
     safety: float = Field(..., ge=0.0)
 
 
+class ScoringNormalization(StrictModel):
+    """Normalization baselines for cost and latency scoring."""
+
+    max_cost: float = Field(..., gt=0.0)
+    max_latency_ms: int = Field(..., gt=0)
+
+
 class ScoringSettings(StrictModel):
     """Scoring configuration."""
 
     weights: ScoringWeights
+    normalization: ScoringNormalization
     safety_penalty: float = Field(..., ge=0.0, le=1.0)
 
 

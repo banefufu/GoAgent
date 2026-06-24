@@ -13,6 +13,7 @@ def test_default_settings_loads(monkeypatch: pytest.MonkeyPatch) -> None:
     assert settings.database.path == Path("data/goagentx.db")
     assert settings.arena.quick_reject_rounds == 5
     assert settings.scoring.weights.quality == 0.70
+    assert settings.scoring.normalization.max_latency_ms == 10000
     assert settings.promotion_gate.require_no_safety_violation is True
 
 
@@ -69,6 +70,9 @@ weights:
   cost: 0.10
   latency: 0.10
   safety: 0.10
+normalization:
+  max_cost: 1.0
+  max_latency_ms: 10000
 safety_penalty: 1.0
 """.lstrip(),
         encoding="utf-8",
