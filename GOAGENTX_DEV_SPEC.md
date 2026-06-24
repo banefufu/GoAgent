@@ -644,7 +644,7 @@ class StrategyRegistry:
 | E | 已完成 | E1-E3 已完成，DreamCycle 可生成候选并跑 Quick Reject |
 | F | 已完成 | F1-F3 已完成，Genome GA 可生成 candidate population |
 | G | 已完成 | G1-G3 已完成，Promotion 闭环可推进并回滚 |
-| H | 待开始 | CLI 先于 Dashboard |
+| H | 进行中 | H1 已完成，继续推进 Eval CLI |
 | I | 待开始 | 用 E2E 防止闭环断裂 |
 
 ---
@@ -1078,7 +1078,7 @@ class StrategyRegistry:
 
 目标：让开发者能通过命令完成完整闭环。
 
-### H1：Strategy CLI
+### H1：Strategy CLI（已完成）
 
 - 目标：实现策略查看、导入、导出、状态查看。
 - 前置依赖：B3
