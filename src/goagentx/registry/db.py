@@ -34,6 +34,7 @@ def initialize_database(database_path: str | Path) -> Path:
             connection.executescript(schema_sql)
             _ensure_strategy_schema(connection)
             _ensure_task_schema(connection)
+            _ensure_eval_experiment_schema(connection)
             connection.commit()
     except sqlite3.Error as exc:
         raise DatabaseInitializationError(
@@ -107,3 +108,25 @@ def _ensure_task_schema(connection: sqlite3.Connection) -> None:
         WHERE status = 'champion' AND task_type IS NULL
         """
     )
+
+
+def _ensure_eval_experiment_schema(connection: sqlite3.Connection) -> None:
+    """Apply small migrations for persisted eval experiment summaries."""
+    experiment_columns = {
+        row[1]
+        for row in connection.execute("PRAGMA table_info(eval_experiments)").fetchall()
+    }
+    if "safety_violation_count" not in experiment_columns:
+        connection.execute(
+            """
+            ALTER TABLE eval_experiments
+            ADD COLUMN safety_violation_count INTEGER NOT NULL DEFAULT 0
+            """
+        )
+    if "critical_bucket_regression" not in experiment_columns:
+        connection.execute(
+            """
+            ALTER TABLE eval_experiments
+            ADD COLUMN critical_bucket_regression INTEGER NOT NULL DEFAULT 0
+            """
+        )

@@ -55,6 +55,8 @@ def test_full_eval_writes_report_and_eval_experiment(tmp_path: Path) -> None:
     assert result.report_path.exists()
     assert stored_experiment.report_path == result.report_path
     assert stored_experiment.verdict == "promote_ready"
+    assert stored_experiment.safety_violation_count == 0
+    assert stored_experiment.critical_bucket_regression is False
     assert len(stored_runs) == len(result.selected_task_ids) * 2
     assert "# Arena Full Eval Report" in report_text
     assert "`promote_ready`" in report_text

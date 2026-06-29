@@ -105,6 +105,44 @@ def test_eval_cli_runs_full_eval_from_stored_task_set_id(tmp_path: Path) -> None
     assert experiment.id == "cli-full-eval-db"
 
 
+def test_eval_cli_demo_runner_can_produce_promote_ready_result(tmp_path: Path) -> None:
+    database_path = tmp_path / "goagentx.db"
+    registry = StrategyRegistry(database_path)
+    registry.create(_strategy("champion-docs", StrategyStatus.CHAMPION))
+    registry.create(_strategy("candidate-docs", StrategyStatus.CANDIDATE))
+
+    result = runner.invoke(
+        app,
+        [
+            "eval",
+            "--config-dir",
+            "configs",
+            "--database-path",
+            str(database_path),
+            "--champion",
+            "champion-docs",
+            "--candidate",
+            "candidate-docs",
+            "--task-set",
+            "tests/fixtures/task_sets/sample_agent_tasks.json",
+            "--report-dir",
+            str(tmp_path / "reports"),
+            "--experiment-id",
+            "cli-full-eval-demo",
+            "--runner",
+            "demo",
+        ],
+    )
+
+    experiment = EvalExperimentStore(database_path).get("cli-full-eval-demo")
+
+    assert result.exit_code == 0, result.output
+    assert "Full Eval verdict: promote_ready" in result.output
+    assert experiment.verdict == "promote_ready"
+    assert experiment.safety_violation_count == 0
+    assert experiment.critical_bucket_regression is False
+
+
 def test_eval_cli_exits_when_task_set_is_missing(tmp_path: Path) -> None:
     database_path = tmp_path / "goagentx.db"
     registry = StrategyRegistry(database_path)

@@ -49,6 +49,41 @@ class FakeAgentRunner:
         )
 
 
+@dataclass(frozen=True)
+class StaticQualityRunner:
+    """Deterministic runner with configured per-strategy quality scores."""
+
+    quality_by_strategy_id: dict[str, float]
+    default_quality: float = 0.6
+    cost: float = 0.03
+    latency_ms: int = 900
+    token_count: int = 320
+
+    def run(self, strategy: Strategy, task: Task) -> AgentRunResult:
+        """Return a stable result with quality controlled by strategy id."""
+        quality = self.quality_by_strategy_id.get(strategy.id, self.default_quality)
+        return AgentRunResult(
+            output_json={
+                "strategy_id": strategy.id,
+                "task_id": task.id,
+                "task_type": task.task_type,
+                "quality": quality,
+            },
+            quality_score=quality,
+            success=True,
+            cost=self.cost,
+            latency_ms=self.latency_ms,
+            token_count=self.token_count,
+            tool_calls=[
+                {
+                    "name": "static_quality_runner",
+                    "strategy_id": strategy.id,
+                    "task_id": task.id,
+                }
+            ],
+        )
+
+
 def _fixture_output(strategy: Strategy, task: Task) -> dict[str, Any]:
     """Generate deterministic task output from fixture expectations."""
     expected = task.expected_json or {}
@@ -108,4 +143,5 @@ __all__ = [
     "AgentRunner",
     "AgentRunResult",
     "FakeAgentRunner",
+    "StaticQualityRunner",
 ]

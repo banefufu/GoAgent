@@ -19,40 +19,30 @@ python -m venv .venv
 .\.venv\Scripts\goagentx.exe init --database-path data\demo.db
 ```
 
-Seed the demo champion. Direct champion import is intentionally not exposed by
-the CLI, so this local bootstrap uses the registry API for the first baseline.
+Seed the demo champion, candidate, and golden task set.
 
 ```powershell
-@'
-from goagentx.registry.strategy_io import load_strategy_yaml
-from goagentx.registry.strategy_registry import StrategyRegistry
-
-registry = StrategyRegistry("data/demo.db")
-champion = load_strategy_yaml("tests/fixtures/strategies/champion.yaml")
-registry.create(champion)
-print(f"seeded {champion.id} as {champion.status.value}")
-'@ | .\.venv\Scripts\python.exe -
+.\.venv\Scripts\goagentx.exe demo seed --database-path data\demo.db
 ```
 
-Import a candidate, run Arena Full Eval, and promote it to shadow with the manual
-gate defaults.
+Run Arena Full Eval with the deterministic demo runner, then promote the candidate
+to shadow using the stored eval result.
 
 ```powershell
-.\.venv\Scripts\goagentx.exe strategy import tests\fixtures\strategies\candidate_good.yaml --database-path data\demo.db
-
 .\.venv\Scripts\goagentx.exe eval `
   --database-path data\demo.db `
   --champion champion `
   --candidate candidate_good `
-  --task-set tests\fixtures\task_sets\sample_agent_tasks.json `
+  --task-set golden-agent-tasks `
   --report-dir reports `
-  --experiment-id demo-good-eval
+  --experiment-id demo-good-eval `
+  --runner demo
 
 .\.venv\Scripts\goagentx.exe promote `
   --database-path data\demo.db `
   --candidate candidate_good `
   --mode shadow `
-  --champion champion `
+  --experiment-id demo-good-eval `
   --reason readme_demo_shadow
 ```
 
@@ -127,6 +117,9 @@ Useful commands:
 `strategy import` only imports as `draft` or `candidate`. This prevents a file
 edit from bypassing Arena and promotion controls.
 
+For a local demo database, use `goagentx demo seed` to create the initial
+champion safely from the bundled fixture.
+
 ## Task Set Format
 
 A task set is a JSON file with an `id` and a non-empty `tasks` list.
@@ -175,13 +168,14 @@ Markdown report plus persisted task runs.
   --task-set tests\fixtures\task_sets\sample_agent_tasks.json `
   --report-dir reports `
   --experiment-id demo-eval `
-  --seed 0
+  --seed 0 `
+  --runner demo
 ```
 
 The output includes verdict, selected task count, win rate, average score delta,
-report path, and failed checks. With the default CLI fake runner, equal fixture
-quality can still produce a `reject` verdict because significance and score
-delta gates are intentionally strict.
+report path, and failed checks. Use `--runner demo` for a deterministic
+promote-ready demo; use the default `--runner fake` to exercise the fixture-based
+runner.
 
 ## DreamCycle
 
@@ -236,7 +230,7 @@ Promote a candidate to shadow:
   --database-path data\demo.db `
   --candidate candidate_good `
   --mode shadow `
-  --champion champion `
+  --experiment-id demo-good-eval `
   --reason manual_shadow_gate
 ```
 
@@ -291,9 +285,9 @@ Arena, promotion, or registry contracts.
 
 ### Why can I not import a champion directly?
 
-Direct champion import would bypass evaluation and audit controls. Use registry
-bootstrap only for a fresh local demo database, then move all future strategies
-through `candidate -> shadow -> canary -> champion`.
+Direct champion import would bypass evaluation and audit controls. Use
+`goagentx demo seed` only for a fresh local demo database, then move all future
+strategies through `candidate -> shadow -> canary -> champion`.
 
 ### Why did Full Eval reject a candidate that looked fine?
 

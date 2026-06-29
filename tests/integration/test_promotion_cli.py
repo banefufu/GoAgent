@@ -12,6 +12,7 @@ from goagentx.core.strategy import (
     ToolsGenome,
 )
 from goagentx.promotion.controller import PromotionController
+from goagentx.registry.experiment_store import EvalExperiment, EvalExperimentStore
 from goagentx.registry.strategy_registry import StrategyRegistry
 
 
@@ -80,6 +81,57 @@ def test_cli_promote_rejects_when_gate_metrics_fail(tmp_path: Path) -> None:
     assert "win_rate_below_threshold" in result.output
     assert registry.get(candidate.id).status is StrategyStatus.CANDIDATE
     assert PromotionController(registry).list_events(strategy_id=candidate.id) == []
+
+
+def test_cli_promote_uses_stored_eval_experiment(tmp_path: Path) -> None:
+    database_path = tmp_path / "goagentx.db"
+    registry = StrategyRegistry(database_path)
+    champion = registry.create(_strategy("champion-docs", StrategyStatus.CHAMPION))
+    candidate = registry.create(_strategy("candidate-docs", StrategyStatus.CANDIDATE))
+    EvalExperimentStore(database_path).save(
+        EvalExperiment(
+            id="eval-promote-ready",
+            champion_id=champion.id,
+            candidate_id=candidate.id,
+            task_set_id="sample-agent-tasks",
+            quick_reject_passed=True,
+            win_rate=1.0,
+            p_value=0.01,
+            avg_score_delta=0.2,
+            cost_delta=0.0,
+            latency_delta=0.0,
+            safety_violation_count=0,
+            critical_bucket_regression=False,
+            verdict="promote_ready",
+            report_path=tmp_path / "reports" / "eval-promote-ready.md",
+        )
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "promote",
+            "--config-dir",
+            "configs",
+            "--database-path",
+            str(database_path),
+            "--candidate",
+            candidate.id,
+            "--mode",
+            "shadow",
+            "--experiment-id",
+            "eval-promote-ready",
+            "--reason",
+            "cli_eval_gate_passed",
+        ],
+    )
+
+    events = PromotionController(registry).list_events(strategy_id=candidate.id)
+
+    assert result.exit_code == 0, result.output
+    assert "Promoted candidate-docs: candidate -> shadow" in result.output
+    assert registry.get(candidate.id).status is StrategyStatus.SHADOW
+    assert events[0].experiment_id == "eval-promote-ready"
 
 
 def test_cli_rollback_restores_previous_champion(tmp_path: Path) -> None:

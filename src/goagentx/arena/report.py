@@ -368,6 +368,8 @@ def full_eval_result_to_experiment(result: FullEvaluationResult) -> EvalExperime
         avg_score_delta=result.evaluation.avg_score_delta,
         cost_delta=result.cost_delta,
         latency_delta=result.latency_delta,
+        safety_violation_count=result.safety_violation_count,
+        critical_bucket_regression=result.critical_bucket_regression,
         verdict=result.verdict.value,
         report_path=result.report_path,
     )

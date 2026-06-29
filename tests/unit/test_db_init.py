@@ -104,6 +104,44 @@ def test_initialize_database_migrates_task_store_columns(tmp_path: Path) -> None
     assert "score_breakdown_json" in _column_names(database_path, "task_runs")
 
 
+def test_initialize_database_migrates_eval_experiment_gate_columns(
+    tmp_path: Path,
+) -> None:
+    database_path = tmp_path / "data" / "goagentx.db"
+    database_path.parent.mkdir()
+    with sqlite3.connect(database_path) as connection:
+        connection.execute(
+            """
+            CREATE TABLE eval_experiments (
+              id TEXT PRIMARY KEY,
+              champion_id TEXT NOT NULL,
+              candidate_id TEXT NOT NULL,
+              task_set_id TEXT NOT NULL,
+              quick_reject_passed INTEGER NOT NULL,
+              win_rate REAL NOT NULL,
+              p_value REAL,
+              avg_score_delta REAL NOT NULL,
+              cost_delta REAL NOT NULL,
+              latency_delta REAL NOT NULL,
+              verdict TEXT NOT NULL,
+              report_path TEXT,
+              created_at TEXT NOT NULL
+            )
+            """
+        )
+
+    initialize_database(database_path)
+
+    assert "safety_violation_count" in _column_names(
+        database_path,
+        "eval_experiments",
+    )
+    assert "critical_bucket_regression" in _column_names(
+        database_path,
+        "eval_experiments",
+    )
+
+
 def test_init_command_uses_configured_database_path(tmp_path: Path) -> None:
     config_dir = _write_config_set(tmp_path)
     database_path = tmp_path / "custom" / "goagentx.db"

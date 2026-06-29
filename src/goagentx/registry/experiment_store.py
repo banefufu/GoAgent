@@ -38,6 +38,8 @@ class EvalExperiment(StrictModel):
     avg_score_delta: float
     cost_delta: float
     latency_delta: float
+    safety_violation_count: int = Field(default=0, ge=0)
+    critical_bucket_regression: bool = False
     verdict: str = Field(..., min_length=1)
     report_path: Path | None = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
@@ -58,9 +60,10 @@ class EvalExperimentStore:
                 INSERT OR REPLACE INTO eval_experiments (
                   id, champion_id, candidate_id, task_set_id, quick_reject_passed,
                   win_rate, p_value, avg_score_delta, cost_delta, latency_delta,
-                  verdict, report_path, created_at
+                  safety_violation_count, critical_bucket_regression, verdict,
+                  report_path, created_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 _experiment_to_row(experiment),
             )
@@ -73,7 +76,8 @@ class EvalExperimentStore:
                 """
                 SELECT id, champion_id, candidate_id, task_set_id, quick_reject_passed,
                        win_rate, p_value, avg_score_delta, cost_delta, latency_delta,
-                       verdict, report_path, created_at
+                       safety_violation_count, critical_bucket_regression, verdict,
+                       report_path, created_at
                 FROM eval_experiments
                 WHERE id = ?
                 """,
@@ -105,6 +109,8 @@ def _experiment_to_row(experiment: EvalExperiment) -> tuple[object, ...]:
         experiment.avg_score_delta,
         experiment.cost_delta,
         experiment.latency_delta,
+        experiment.safety_violation_count,
+        int(experiment.critical_bucket_regression),
         experiment.verdict,
         str(experiment.report_path) if experiment.report_path is not None else None,
         experiment.created_at.isoformat(),
@@ -124,6 +130,8 @@ def _row_to_experiment(row: sqlite3.Row) -> EvalExperiment:
         avg_score_delta=row["avg_score_delta"],
         cost_delta=row["cost_delta"],
         latency_delta=row["latency_delta"],
+        safety_violation_count=row["safety_violation_count"],
+        critical_bucket_regression=bool(row["critical_bucket_regression"]),
         verdict=row["verdict"],
         report_path=Path(row["report_path"]) if row["report_path"] else None,
         created_at=datetime.fromisoformat(row["created_at"]),

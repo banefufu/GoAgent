@@ -50,6 +50,8 @@ CREATE TABLE IF NOT EXISTS eval_experiments (
   avg_score_delta REAL NOT NULL,
   cost_delta REAL NOT NULL,
   latency_delta REAL NOT NULL,
+  safety_violation_count INTEGER NOT NULL DEFAULT 0,
+  critical_bucket_regression INTEGER NOT NULL DEFAULT 0,
   verdict TEXT NOT NULL,
   report_path TEXT,
   created_at TEXT NOT NULL

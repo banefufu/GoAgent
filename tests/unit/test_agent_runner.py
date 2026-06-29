@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from goagentx.adapters.agent_runner import FakeAgentRunner
+from goagentx.adapters.agent_runner import FakeAgentRunner, StaticQualityRunner
 from goagentx.config.settings import load_settings
 from goagentx.core.run import make_task_run_id, run_agent_task
 from goagentx.core.scoring import Scorer
@@ -89,6 +89,19 @@ def test_failed_fake_run_returns_low_scored_task_run() -> None:
     assert task_run.error_json is not None
     assert task_run.score == pytest.approx(0.288)
     assert task_run.score_breakdown["quality"] == 0.0
+
+
+def test_static_quality_runner_uses_strategy_quality() -> None:
+    task = _fixture_task("task-doc-001")
+
+    result = StaticQualityRunner({"candidate-docs": 0.93}).run(
+        _strategy("candidate-docs", task_type="doc_qa"),
+        task,
+    )
+
+    assert result.quality_score == 0.93
+    assert result.output_json["strategy_id"] == "candidate-docs"
+    assert result.tool_calls[0]["name"] == "static_quality_runner"
 
 
 def test_make_task_run_id_is_stable_with_and_without_experiment() -> None:

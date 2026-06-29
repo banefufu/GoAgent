@@ -9,7 +9,7 @@ import typer
 import yaml
 
 from goagentx import __version__
-from goagentx.adapters.agent_runner import FakeAgentRunner
+from goagentx.adapters.agent_runner import FakeAgentRunner, StaticQualityRunner
 from goagentx.arena.report import FullEvalError, run_full_eval_from_settings
 from goagentx.config.settings import DEFAULT_CONFIG_DIR, load_settings
 from goagentx.core.scoring import Scorer
@@ -23,11 +23,16 @@ from goagentx.promotion.controller import PromotionController, PromotionControll
 from goagentx.promotion.gate import PromotionGateMetrics, evaluate_promotion_gate
 from goagentx.promotion.rollback import RollbackController, RollbackControllerError
 from goagentx.registry.db import initialize_database
-from goagentx.registry.experiment_store import EvalExperimentStore
+from goagentx.registry.experiment_store import (
+    EvalExperiment,
+    EvalExperimentStore,
+    EvalExperimentStoreError,
+)
 from goagentx.registry.strategy_io import (
     StrategyIOError,
     export_strategy_yaml,
     import_strategy_yaml,
+    load_strategy_yaml,
     strategy_to_yaml_data,
 )
 from goagentx.registry.strategy_registry import StrategyRegistry
@@ -46,8 +51,13 @@ strategy_app = typer.Typer(
     help="Inspect and move Strategy YAML files through the registry.",
     no_args_is_help=True,
 )
+demo_app = typer.Typer(
+    help="Seed local demo data for the MVP workflow.",
+    no_args_is_help=True,
+)
 app.add_typer(evolve_app, name="evolve")
 app.add_typer(strategy_app, name="strategy")
+app.add_typer(demo_app, name="demo")
 
 
 @app.callback(invoke_without_command=True)
@@ -147,6 +157,13 @@ def eval_command(
             help="Random seed for deterministic task selection and stats.",
         ),
     ] = 0,
+    runner: Annotated[
+        str,
+        typer.Option(
+            "--runner",
+            help="Evaluation runner: fake or demo.",
+        ),
+    ] = "fake",
 ) -> None:
     """Run Full Eval for a champion/candidate pair and write a report."""
     settings = load_settings(config_dir)
@@ -159,12 +176,17 @@ def eval_command(
         champion = registry.get(champion_id)
         candidate = registry.get(candidate_id)
         tasks, task_set_id = _resolve_eval_tasks(task_store, task_set)
+        champion_runner, candidate_runner = _eval_runners(
+            runner,
+            champion=champion,
+            candidate=candidate,
+        )
         result = run_full_eval_from_settings(
             champion=champion,
             candidate=candidate,
             tasks=tasks,
-            champion_runner=FakeAgentRunner(),
-            candidate_runner=FakeAgentRunner(),
+            champion_runner=champion_runner,
+            candidate_runner=candidate_runner,
             scorer=Scorer(settings.scoring),
             arena_settings=settings.arena,
             gate_settings=settings.promotion_gate,
@@ -304,21 +326,20 @@ def promote_command(
     try:
         candidate = registry.get(candidate_id)
         resolved_target = StrategyStatus(mode)
-        resolved_champion_id = champion_id or registry.get_champion(candidate.task_type).id
-        gate = evaluate_promotion_gate(
-            PromotionGateMetrics(
-                experiment_id=experiment_id or f"manual-promotion-{candidate.id}",
-                champion_id=resolved_champion_id,
-                candidate_id=candidate.id,
-                win_rate=win_rate,
-                p_value=p_value,
-                avg_score_delta=avg_score_delta,
-                cost_delta=cost_delta,
-                latency_delta=latency_delta,
-                safety_violation_count=safety_violation_count,
-                critical_bucket_regression=critical_bucket_regression,
-            ),
-            settings.promotion_gate,
+        gate = _promotion_gate_from_cli(
+            database_path=registry.database_path,
+            candidate=candidate,
+            champion_id=champion_id,
+            registry=registry,
+            experiment_id=experiment_id,
+            win_rate=win_rate,
+            p_value=p_value,
+            avg_score_delta=avg_score_delta,
+            cost_delta=cost_delta,
+            latency_delta=latency_delta,
+            safety_violation_count=safety_violation_count,
+            critical_bucket_regression=critical_bucket_regression,
+            settings=settings.promotion_gate,
         )
         if not gate.approved:
             typer.echo(
@@ -333,6 +354,7 @@ def promote_command(
             reason=reason,
         )
     except (
+        EvalExperimentStoreError,
         PromotionControllerError,
         StrategyRegistryError,
         ValueError,
@@ -599,6 +621,69 @@ def strategy_export_command(
     typer.echo(f"Exported strategy {strategy.id} to {written_path}.")
 
 
+@demo_app.command("seed")
+def demo_seed_command(
+    config_dir: Annotated[
+        Path,
+        typer.Option(
+            "--config-dir",
+            help="Directory containing GoAgentX YAML configuration files.",
+        ),
+    ] = DEFAULT_CONFIG_DIR,
+    database_path: Annotated[
+        Path | None,
+        typer.Option(
+            "--database-path",
+            help="Override the configured SQLite database path.",
+        ),
+    ] = None,
+    task_set_path: Annotated[
+        Path,
+        typer.Option(
+            "--task-set",
+            help="Demo task-set JSON file path.",
+        ),
+    ] = Path("tests/fixtures/task_sets/sample_agent_tasks.json"),
+    champion_path: Annotated[
+        Path,
+        typer.Option(
+            "--champion-yaml",
+            help="Demo champion strategy YAML file path.",
+        ),
+    ] = Path("tests/fixtures/strategies/champion.yaml"),
+    candidate_path: Annotated[
+        Path,
+        typer.Option(
+            "--candidate-yaml",
+            help="Demo candidate strategy YAML file path.",
+        ),
+    ] = Path("tests/fixtures/strategies/candidate_good.yaml"),
+) -> None:
+    """Seed a local demo database with champion, candidate, and golden tasks."""
+    settings = load_settings(config_dir)
+    database = database_path or settings.database.path
+    registry = StrategyRegistry(database)
+    task_store = TaskStore(database)
+
+    try:
+        champion = _create_or_get_strategy(registry, load_strategy_yaml(champion_path))
+        candidate = _create_or_get_strategy(registry, load_strategy_yaml(candidate_path))
+        task_set = load_task_set(task_set_path)
+        stored_tasks = task_store.save_task_set(task_set)
+    except (
+        StrategyIOError,
+        StrategyRegistryError,
+        TaskModelError,
+        ValueError,
+    ) as exc:
+        typer.echo(f"Demo seed failed: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+    typer.echo(f"Seeded champion: {champion.id} ({champion.status.value})")
+    typer.echo(f"Seeded candidate: {candidate.id} ({candidate.status.value})")
+    typer.echo(f"Seeded task set: {task_set.id} ({len(stored_tasks)} tasks)")
+
+
 @evolve_app.command("ga")
 def evolve_ga_command(
     config_dir: Annotated[
@@ -862,6 +947,98 @@ def _resolve_eval_tasks(
     if not tasks:
         raise ValueError(f"Task set not found: {task_set}")
     return tasks, task_set
+
+
+def _eval_runners(
+    runner: str,
+    *,
+    champion: Strategy,
+    candidate: Strategy,
+) -> tuple[FakeAgentRunner | StaticQualityRunner, FakeAgentRunner | StaticQualityRunner]:
+    """Return CLI-selected evaluation runners."""
+    if runner == "fake":
+        fake_runner = FakeAgentRunner()
+        return fake_runner, fake_runner
+    if runner == "demo":
+        demo_runner = StaticQualityRunner(
+            {
+                champion.id: 0.60,
+                candidate.id: 0.95,
+            }
+        )
+        return demo_runner, demo_runner
+    raise ValueError("runner must be one of: fake, demo")
+
+
+def _promotion_gate_from_cli(
+    *,
+    database_path: Path,
+    candidate: Strategy,
+    champion_id: str | None,
+    registry: StrategyRegistry,
+    experiment_id: str | None,
+    win_rate: float,
+    p_value: float,
+    avg_score_delta: float,
+    cost_delta: float,
+    latency_delta: float,
+    safety_violation_count: int,
+    critical_bucket_regression: bool,
+    settings: object,
+):
+    """Build a promotion gate from a stored eval or manual CLI metrics."""
+    metrics = (
+        _promotion_metrics_from_experiment(
+            EvalExperimentStore(database_path).get(experiment_id)
+        )
+        if experiment_id is not None
+        else PromotionGateMetrics(
+            experiment_id=f"manual-promotion-{candidate.id}",
+            champion_id=champion_id or registry.get_champion(candidate.task_type).id,
+            candidate_id=candidate.id,
+            win_rate=win_rate,
+            p_value=p_value,
+            avg_score_delta=avg_score_delta,
+            cost_delta=cost_delta,
+            latency_delta=latency_delta,
+            safety_violation_count=safety_violation_count,
+            critical_bucket_regression=critical_bucket_regression,
+        )
+    )
+    if metrics.candidate_id != candidate.id:
+        raise ValueError("experiment candidate does not match --candidate")
+    if champion_id is not None and metrics.champion_id != champion_id:
+        raise ValueError("experiment champion does not match --champion")
+    return evaluate_promotion_gate(metrics, settings)
+
+
+def _promotion_metrics_from_experiment(
+    experiment: EvalExperiment,
+) -> PromotionGateMetrics:
+    """Convert a persisted eval experiment into promotion gate metrics."""
+    return PromotionGateMetrics(
+        experiment_id=experiment.id,
+        champion_id=experiment.champion_id,
+        candidate_id=experiment.candidate_id,
+        win_rate=experiment.win_rate,
+        p_value=experiment.p_value,
+        avg_score_delta=experiment.avg_score_delta,
+        cost_delta=experiment.cost_delta,
+        latency_delta=experiment.latency_delta,
+        safety_violation_count=experiment.safety_violation_count,
+        critical_bucket_regression=experiment.critical_bucket_regression,
+    )
+
+
+def _create_or_get_strategy(
+    registry: StrategyRegistry,
+    strategy: Strategy,
+) -> Strategy:
+    """Create a strategy or return the existing record without mutating it."""
+    try:
+        return registry.create(strategy)
+    except StrategyRegistryError:
+        return registry.get(strategy.id)
 
 
 def main() -> None:
